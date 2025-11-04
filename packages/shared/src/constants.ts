@@ -1,0 +1,117 @@
+/**
+ * API Configuration
+ */
+export const API_CONFIG = {
+  VERSION: 'v1',
+  BASE_PATH: '/api/v1',
+  TIMEOUT: 30000,
+  MAX_RETRIES: 3,
+} as const;
+
+/**
+ * Bot Configuration Defaults
+ */
+export const BOT_DEFAULTS = {
+  MAX_DOCUMENTS: 50,
+  MAX_DOCUMENT_SIZE: 10 * 1024 * 1024, // 10MB
+  SUPPORTED_DOCUMENT_TYPES: [
+    'application/pdf',
+    'text/plain',
+    'text/markdown',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/msword',
+  ],
+  DEFAULT_TEMPERATURE: 0.7,
+  DEFAULT_MAX_TOKENS: 2000,
+  DEFAULT_RAG_TOP_K: 5,
+  DEFAULT_RAG_THRESHOLD: 0.7,
+} as const;
+
+/**
+ * Pagination defaults
+ */
+export const PAGINATION = {
+  DEFAULT_PAGE: 1,
+  DEFAULT_PAGE_SIZE: 20,
+  MAX_PAGE_SIZE: 100,
+} as const;
+
+/**
+ * Error codes
+ */
+export const ERROR_CODES = {
+  // Authentication & Authorization
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  FORBIDDEN: 'FORBIDDEN',
+  INVALID_TOKEN: 'INVALID_TOKEN',
+
+  // Validation
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  INVALID_INPUT: 'INVALID_INPUT',
+
+  // Resource errors
+  NOT_FOUND: 'NOT_FOUND',
+  ALREADY_EXISTS: 'ALREADY_EXISTS',
+  CONFLICT: 'CONFLICT',
+
+  // Bot errors
+  BOT_NOT_FOUND: 'BOT_NOT_FOUND',
+  BOT_CREATION_FAILED: 'BOT_CREATION_FAILED',
+  BOT_UPDATE_FAILED: 'BOT_UPDATE_FAILED',
+  BOT_DELETE_FAILED: 'BOT_DELETE_FAILED',
+
+  // Document errors
+  DOCUMENT_UPLOAD_FAILED: 'DOCUMENT_UPLOAD_FAILED',
+  DOCUMENT_PROCESSING_FAILED: 'DOCUMENT_PROCESSING_FAILED',
+  DOCUMENT_TOO_LARGE: 'DOCUMENT_TOO_LARGE',
+  UNSUPPORTED_DOCUMENT_TYPE: 'UNSUPPORTED_DOCUMENT_TYPE',
+  MAX_DOCUMENTS_EXCEEDED: 'MAX_DOCUMENTS_EXCEEDED',
+
+  // AI/RAG errors
+  AI_SERVICE_ERROR: 'AI_SERVICE_ERROR',
+  RAG_INDEXING_FAILED: 'RAG_INDEXING_FAILED',
+  GENERATION_FAILED: 'GENERATION_FAILED',
+
+  // General errors
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
+  RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
+} as const;
+
+/**
+ * HTTP Status codes
+ */
+export const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  NO_CONTENT: 204,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  UNPROCESSABLE_ENTITY: 422,
+  TOO_MANY_REQUESTS: 429,
+  INTERNAL_SERVER_ERROR: 500,
+  SERVICE_UNAVAILABLE: 503,
+} as const;
+
+/**
+ * Cache TTL (in seconds)
+ */
+export const CACHE_TTL = {
+  SHORT: 60, // 1 minute
+  MEDIUM: 300, // 5 minutes
+  LONG: 3600, // 1 hour
+  VERY_LONG: 86400, // 24 hours
+} as const;
+
+/**
+ * Rate limiting
+ */
+export const RATE_LIMITS = {
+  WINDOW_MS: 60000, // 1 minute
+  MAX_REQUESTS: 100,
+  MAX_DOCUMENT_UPLOADS_PER_HOUR: 20,
+  MAX_MESSAGES_PER_MINUTE: 30,
+} as const;
