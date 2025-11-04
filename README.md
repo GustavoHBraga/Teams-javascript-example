@@ -312,13 +312,34 @@ npm install
 npm run build
 ```
 
+## 📚 Documentação Completa
+
+### **🚀 Guias de Início**
+- [Quick Start](./docs/QUICK_START.md) - Começar em 5 minutos
+- [Arquitetura](./docs/ARCHITECTURE.md) - Visão geral do sistema
+- [Project Summary](./docs/PROJECT_SUMMARY.md) - Resumo executivo
+
+### **💻 APIs e Desenvolvimento**
+- [API Documentation](./docs/API.md) - Endpoints e exemplos de uso
+- [Frontend Guide](./docs/FRONTEND_GUIDE.md) - Desenvolvimento React + Fluent UI
+
+### **🧠 RAG e Vector Databases**
+- [📄 Document Upload](./docs/DOCUMENT_UPLOAD.md) - Upload e RAG básico
+- [🧠 Vector Database Guide](./docs/VECTOR_DATABASE_GUIDE.md) - ChromaDB implementação completa
+- [⚡ Quick ChromaDB Setup](./docs/QUICK_CHROMADB.md) - Setup ChromaDB em 5 minutos
+- [📊 Vector DB Comparison](./docs/VECTOR_DB_COMPARISON.md) - Comparação: ChromaDB vs Pinecone vs outros
+- [💻 ChromaDB Implementation](./docs/CHROMADB_IMPLEMENTATION.md) - Código pronto para copiar
+
+---
+
 ## 📚 Próximos Passos
 
-- [ ] Implementar frontend React
+- [x] Implementar frontend React
+- [x] Adicionar upload de documentos
 - [ ] Configurar Bot do Teams
 - [ ] Adicionar autenticação com Azure AD
-- [ ] Implementar upload de documentos
-- [ ] Integrar Azure AI Search para RAG
+- [ ] Implementar ChromaDB para RAG avançado
+- [ ] Integrar Azure AI Search (alternativa)
 - [ ] Adicionar testes unitários e E2E
 - [ ] Configurar CI/CD com GitHub Actions
 - [ ] Deploy para Azure

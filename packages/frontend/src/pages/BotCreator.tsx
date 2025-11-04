@@ -13,8 +13,11 @@ import {
   Field,
   Title2,
   Spinner,
+  Switch,
+  Text,
 } from '@fluentui/react-components';
 import { botApi } from '../services/botService';
+import { DocumentUploader, UploadedFile } from '../components/DocumentUploader';
 import type { CreateBotInput, BotScope } from '@teams-bot/shared';
 
 const useStyles = makeStyles({
@@ -58,8 +61,57 @@ export function BotCreator() {
     tags: [],
   });
 
+  const [documents, setDocuments] = useState<UploadedFile[]>([]);
+  const [isUploadingDocs, setIsUploadingDocs] = useState(false);
+
   const createMutation = useMutation({
-    mutationFn: (data: CreateBotInput) => botApi.create(data),
+    mutationFn: async (data: CreateBotInput) => {
+      // 1. Criar o bot
+      const bot = await botApi.create(data);
+      
+      // 2. Se houver documentos, fazer upload
+      if (documents.length > 0) {
+        setIsUploadingDocs(true);
+        
+        for (let i = 0; i < documents.length; i++) {
+          const doc = documents[i];
+          
+          // Atualizar status para "uploading"
+          setDocuments(prev => 
+            prev.map((d, idx) => 
+              idx === i ? { ...d, status: 'uploading' as const } : d
+            )
+          );
+
+          try {
+            await botApi.uploadDocument(bot.id, doc.file, {
+              title: doc.file.name,
+              description: `Documento de treinamento para ${bot.name}`,
+            });
+
+            // Atualizar status para "success"
+            setDocuments(prev => 
+              prev.map((d, idx) => 
+                idx === i ? { ...d, status: 'success' as const } : d
+              )
+            );
+          } catch (error) {
+            console.error('Erro ao fazer upload do documento:', error);
+            
+            // Atualizar status para "error"
+            setDocuments(prev => 
+              prev.map((d, idx) => 
+                idx === i ? { ...d, status: 'error' as const, error: 'Falha no upload' } : d
+              )
+            );
+          }
+        }
+        
+        setIsUploadingDocs(false);
+      }
+
+      return bot;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bots'] });
       navigate('/bots');
@@ -147,15 +199,61 @@ export function BotCreator() {
             />
           </Field>
 
+          <Field label="Habilitar RAG (Retrieval-Augmented Generation)">
+            <Switch
+              checked={formData.config.enableRAG}
+              onChange={(e, data) =>
+                setFormData({
+                  ...formData,
+                  config: { ...formData.config, enableRAG: data.checked },
+                })
+              }
+              label={
+                formData.config.enableRAG
+                  ? 'RAG ativado - O bot usará os documentos anexados para responder'
+                  : 'RAG desativado - O bot usará apenas conhecimento base'
+              }
+            />
+          </Field>
+
+          {formData.config.enableRAG && (
+            <Field 
+              label="Documentos de Treinamento" 
+              hint="Anexe documentos para o bot ter conhecimento específico do seu domínio"
+            >
+              <DocumentUploader
+                files={documents}
+                onFilesChange={setDocuments}
+                maxFiles={10}
+                acceptedTypes={['.pdf', '.txt', '.md', '.doc', '.docx']}
+              />
+            </Field>
+          )}
+
+          {documents.length > 0 && (
+            <Card style={{ padding: '16px', backgroundColor: tokens.colorNeutralBackground3 }}>
+              <Text weight="semibold">📚 Como funciona o RAG:</Text>
+              <Text size={300} style={{ marginTop: '8px', display: 'block' }}>
+                Os documentos anexados serão processados e indexados. Quando você fizer perguntas, 
+                o bot vai buscar informações relevantes nesses documentos e usar como contexto para 
+                gerar respostas mais precisas e específicas do seu cenário.
+              </Text>
+            </Card>
+          )}
+
           <div className={styles.actions}>
             <Button onClick={() => navigate('/bots')}>Cancelar</Button>
             <Button
               type="submit"
               appearance="primary"
-              disabled={createMutation.isPending}
-              icon={createMutation.isPending ? <Spinner size="tiny" /> : undefined}
+              disabled={createMutation.isPending || isUploadingDocs}
+              icon={createMutation.isPending || isUploadingDocs ? <Spinner size="tiny" /> : undefined}
             >
-              {createMutation.isPending ? 'Criando...' : 'Criar Bot'}
+              {isUploadingDocs 
+                ? 'Enviando documentos...' 
+                : createMutation.isPending 
+                  ? 'Criando...' 
+                  : 'Criar Bot'}
             </Button>
           </div>
         </form>

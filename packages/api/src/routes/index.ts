@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import botsRoutes from './bots.routes';
 import chatRoutes from './chat.routes';
+import documentsRoutes from './documents.routes';
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.get('/health', (_req, res) => {
 
 // API routes
 router.use('/bots', botsRoutes);
+router.use('/bots', documentsRoutes); // Rotas de documentos também começam com /bots
 router.use('/chat', chatRoutes);
 
 export default router;

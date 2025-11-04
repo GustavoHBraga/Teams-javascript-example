@@ -30,6 +30,27 @@ export const botApi = {
   async delete(id: string): Promise<void> {
     await api.delete(`/bots/${id}`);
   },
+
+  // Upload document for bot
+  async uploadDocument(botId: string, file: File, metadata?: { title?: string; description?: string }) {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (metadata?.title) formData.append('title', metadata.title);
+    if (metadata?.description) formData.append('description', metadata.description);
+
+    const { data } = await api.post(`/bots/${botId}/documents`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return data.data;
+  },
+
+  // Get bot documents
+  async getDocuments(botId: string) {
+    const { data } = await api.get(`/bots/${botId}/documents`);
+    return data.data;
+  },
 };
 
 export const chatApi = {

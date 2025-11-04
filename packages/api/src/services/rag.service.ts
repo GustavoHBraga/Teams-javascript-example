@@ -9,6 +9,64 @@ import { DocumentModel } from '../database/models';
  */
 export class RAGService {
   /**
+   * Process document and generate embeddings
+   */
+  async processDocument(
+    botId: string,
+    document: { id: string; content: string; metadata?: any }
+  ): Promise<void> {
+    try {
+      logger.info(`Processing document ${document.id} for bot ${botId}`);
+
+      // Dividir documento em chunks (pedaços menores para melhor busca)
+      const chunks = this.chunkText(document.content, 1000); // 1000 caracteres por chunk
+
+      // TODO: Gerar embeddings para cada chunk
+      // const embeddings = await this.aiService.generateEmbeddings(chunks);
+
+      // Atualizar documento com chunks e embeddings
+      await DocumentModel.findByIdAndUpdate(document.id, {
+        chunks,
+        // embeddings, // Será adicionado quando implementar geração de embeddings
+        status: DocumentStatus.COMPLETED,
+        processedAt: new Date(),
+      });
+
+      logger.info(`Document ${document.id} processed successfully`);
+    } catch (error) {
+      logger.error('Error processing document:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Divide texto em chunks menores
+   */
+  private chunkText(text: string, chunkSize: number): string[] {
+    const chunks: string[] = [];
+    const sentences = text.split(/[.!?]+\s+/); // Dividir por sentenças
+    
+    let currentChunk = '';
+    
+    for (const sentence of sentences) {
+      if ((currentChunk + sentence).length <= chunkSize) {
+        currentChunk += sentence + '. ';
+      } else {
+        if (currentChunk) {
+          chunks.push(currentChunk.trim());
+        }
+        currentChunk = sentence + '. ';
+      }
+    }
+    
+    if (currentChunk) {
+      chunks.push(currentChunk.trim());
+    }
+    
+    return chunks;
+  }
+
+  /**
    * Search for relevant documents based on a query
    */
   async searchDocuments(botId: string, query: string, topK: number = 5): Promise<DocumentSource[]> {
