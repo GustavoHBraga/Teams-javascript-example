@@ -1,0 +1,911 @@
+
+# Objetivo
+
+Criar uma solução completa de gerenciamento de versões utilizando **GitHub Actions + Semantic Release + Conventional Commits**, seguindo um fluxo inspirado em **Trunk-Based Development**, porém adaptado para suportar **pré-releases (Alpha/Beta)**, **Release Final** e **manutenção de versões anteriores (Hotfix)**.
+
+Este fluxo será utilizado para projetos de **Ansible Workflows**, **Terraform Modules** e demais automações.
+
+O objetivo é **padronizar completamente o ciclo de releases**, minimizando ações manuais dos desenvolvedores.
+
+---
+
+# Premissas
+
+- Utilizar Semantic Versioning (SemVer).
+- Utilizar Conventional Commits.
+- Utilizar Semantic Release.
+- GitHub será responsável pela orquestração.
+- Não existe pipeline de CI complexo.
+- O Semantic Release será responsável por:
+  - gerar TAGs
+  - atualizar CHANGELOG.md
+  - criar GitHub Release
+- O foco é somente no gerenciamento das versões.
+
+---
+
+# Branch Strategy
+
+Teremos apenas alguns tipos de branches.
+
+## main
+
+Representa sempre a próxima versão do produto.
+
+Nunca recebe commits diretos.
+
+Somente Pull Requests.
+
+---
+
+## feature/*
+
+Branches temporárias.
+
+Exemplo:
+
+feature/nova-automacao
+
+feature/ajuste-timeout
+
+Sempre abertas a partir da branch correta.
+
+---
+
+## release/x.y
+
+Representa uma release em estabilização.
+
+Exemplo
+
+release/1.2
+
+Nesta branch serão geradas:
+
+1.2.0-alpha.1
+
+1.2.0-alpha.2
+
+1.2.0-beta.1
+
+1.2.0-beta.2
+
+...
+
+Até chegar na Release Final.
+
+---
+
+## hotfix/x.y.z
+
+Criada quando existir manutenção de uma versão publicada.
+
+Exemplo
+
+hotfix/1.2.1
+
+---
+
+# Fluxo Completo
+
+## 1 - Desenvolvimento
+
+O desenvolvedor cria uma feature normalmente.
+
+```
+main
+      │
+      └── feature/minha-feature
+```
+
+Realiza commits utilizando Conventional Commits.
+
+Exemplo
+
+```
+feat(terraform): adiciona variável de subnet
+
+fix(ansible): corrige timeout
+
+docs: atualiza README
+```
+
+Ao finalizar
+
+abre Pull Request
+
+```
+feature/*
+        │
+        ▼
+release/1.2
+```
+
+OBS:
+
+Durante estabilização ninguém faz commit diretamente na release.
+
+Sempre Feature -> Release.
+
+---
+
+## 2 - Criação automática da Release
+
+Desejo um GitHub Workflow chamado
+
+Create Release
+
+Este Workflow deverá ser manual (workflow_dispatch).
+
+Ele deverá perguntar:
+
+- Major
+- Minor
+
+ou permitir informar a versão.
+
+Exemplo
+
+```
+1.2
+```
+
+Após executar
+
+ele deverá automaticamente
+
+- descobrir última versão
+- criar release/1.2
+- abrir automaticamente um Pull Request
+
+```
+release/1.2
+
+↓
+
+main
+```
+
+Este PR ficará aberto até a Release Final.
+
+---
+
+## 3 - Alpha
+
+Sempre que houver merge em
+
+```
+release/*
+```
+
+o Semantic Release deverá gerar
+
+```
+1.2.0-alpha.1
+```
+
+Novo merge
+
+```
+1.2.0-alpha.2
+```
+
+Novo merge
+
+```
+1.2.0-alpha.3
+```
+
+Sempre
+
+- atualizar CHANGELOG
+- criar TAG
+- criar GitHub Release
+
+---
+
+## 4 - Promoção para Beta
+
+Não quero criar outra branch.
+
+Quero utilizar a mesma
+
+```
+release/1.2
+```
+
+Quando desejarmos homologar
+
+deveremos promover Alpha para Beta.
+
+Gostaria de uma sugestão da melhor implementação.
+
+Minha preferência é:
+
+Adicionar uma Label
+
+```
+beta
+```
+
+no Pull Request da Release.
+
+Ao detectar essa Label
+
+o Workflow deverá alterar o canal do Semantic Release.
+
+Passando a gerar
+
+```
+1.2.0-beta.1
+```
+
+Se novos PRs forem mergeados
+
+```
+1.2.0-beta.2
+
+1.2.0-beta.3
+
+...
+```
+
+---
+
+## 5 - Release Final
+
+Quando o Pull Request
+
+```
+release/1.2
+
+↓
+
+main
+```
+
+for aprovado
+
+e realizado Merge
+
+automaticamente
+
+executar o Semantic Release
+
+gerando
+
+```
+1.2.0
+```
+
+Também deverá
+
+- atualizar CHANGELOG
+- criar TAG
+- criar GitHub Release
+
+---
+
+# Fluxo Visual esperado
+
+```
+feature
+      │
+      ▼
+release/1.2
+      │
+      ├── alpha.1
+      ├── alpha.2
+      ├── alpha.3
+      │
+      ├── Label Beta
+      │
+      ├── beta.1
+      ├── beta.2
+      │
+      ▼
+PR Release
+
+↓
+
+Merge Main
+
+↓
+
+1.2.0
+```
+
+---
+
+# Fluxo de dois desenvolvedores
+
+Exemplo
+
+DEV A
+
+```
+feature/login
+```
+
+DEV B
+
+```
+feature/network
+```
+
+Ambos fazem PR
+
+```
+feature/login
+
+↓
+
+release/1.2
+```
+
+gera
+
+```
+1.2.0-alpha.1
+```
+
+Depois
+
+```
+feature/network
+
+↓
+
+release/1.2
+```
+
+gera
+
+```
+1.2.0-alpha.2
+```
+
+Depois entra Beta
+
+```
+1.2.0-beta.1
+```
+
+Novo ajuste
+
+```
+1.2.0-beta.2
+```
+
+Merge da Release
+
+```
+1.2.0
+```
+
+Nunca gerar Alpha nas Feature Branches.
+
+As versões oficiais sempre pertencem à Release Branch.
+
+---
+
+# Hotfix
+
+Desejo outro Workflow
+
+Create Hotfix
+
+Manual.
+
+O usuário informa
+
+```
+1.2.0
+```
+
+ou
+
+```
+1.2.x
+```
+
+O Workflow deverá
+
+criar automaticamente
+
+```
+hotfix/1.2.1
+```
+
+baseado na Tag
+
+```
+1.2.0
+```
+
+Após merge
+
+na Release
+
+gerar
+
+```
+1.2.1
+```
+
+Depois automaticamente
+
+realizar Cherry Pick
+
+ou Merge
+
+para
+
+```
+main
+```
+
+para não perder a correção.
+
+---
+
+# Workflows esperados
+
+Gostaria da implementação dos seguintes Workflows.
+
+## 1
+
+create-release.yml
+
+Responsável por
+
+- descobrir próxima versão
+- criar Release Branch
+- abrir PR automaticamente
+
+---
+
+## 2
+
+alpha.yml
+
+Executado quando existir merge em
+
+```
+release/*
+```
+
+Gera Alpha.
+
+---
+
+## 3
+
+beta.yml
+
+Executado quando
+
+o Pull Request possuir
+
+```
+beta
+```
+
+como Label.
+
+Passa a publicar versões Beta.
+
+---
+
+## 4
+
+release.yml
+
+Executado quando
+
+o Pull Request da Release
+
+for Mergeado.
+
+Publica
+
+```
+1.2.0
+```
+
+---
+
+## 5
+
+create-hotfix.yml
+
+Workflow manual.
+
+Cria automaticamente
+
+```
+hotfix/*
+```
+
+---
+
+## 6
+
+hotfix.yml
+
+Executado quando houver Merge em
+
+```
+hotfix/*
+```
+
+Atualiza
+
+```
+1.2.1
+
+1.2.2
+
+...
+```
+
+Também realiza Cherry Pick para Main.
+
+---
+
+# Configuração esperada do Semantic Release
+
+Utilizar canais diferentes.
+
+Exemplo
+
+Alpha
+
+```
+1.2.0-alpha.1
+```
+
+Beta
+
+```
+1.2.0-beta.1
+```
+
+Release
+
+```
+1.2.0
+```
+
+Patch
+
+```
+1.2.1
+```
+
+Atualizar automaticamente
+
+- CHANGELOG.md
+- GitHub Release
+- Git Tag
+
+---
+
+# Regras
+
+- Nunca gerar Alpha em Feature Branch.
+- Nunca gerar Beta em Feature Branch.
+- Toda versão oficial nasce da Release Branch.
+- Main representa sempre o próximo desenvolvimento.
+- Release representa estabilização.
+- Hotfix representa manutenção de versões publicadas.
+- Não permitir commits diretos em Main.
+- Não permitir commits diretos em Release.
+- Todo fluxo deve ocorrer via Pull Request.
+
+---
+
+# Entregáveis esperados
+
+Desejo uma implementação completa contendo:
+
+- Estrutura de branches
+- Todos os GitHub Actions
+- Configuração do Semantic Release
+- Configuração de Conventional Commits
+- Configuração de Branch Protection recomendada
+- Templates de Pull Request
+- Templates de Issues (caso necessário)
+- Fluxograma da arquitetura
+- Diagrama Mermaid dos fluxos
+- Exemplos completos de uso
+- Documentação em README explicando todo o ciclo
+- Guia para desenvolvedores explicando o passo a passo de utilização.
+
+A implementação deve seguir boas práticas de GitHub Actions, ser modular, reutilizável e facilmente adaptável para outros repositórios.
+
+
+# Implementação do Semantic Release
+
+Utilizar Semantic Release como mecanismo oficial de versionamento.
+
+A implementação deve seguir as boas práticas da documentação oficial.
+
+Utilizar preferencialmente:
+
+- semantic-release
+- @semantic-release/git
+- @semantic-release/github
+- @semantic-release/changelog
+- @semantic-release/commit-analyzer
+- @semantic-release/release-notes-generator
+
+Gerar automaticamente:
+
+- Git Tag
+- GitHub Release
+- CHANGELOG.md
+
+---
+
+# Exemplo de Workflow - Alpha
+
+```yaml
+name: Alpha Release
+
+on:
+  push:
+    branches:
+      - "release/*"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  alpha:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+---
+
+# Exemplo de Workflow - Beta
+
+O Workflow deverá ser executado quando o Pull Request possuir a Label:
+
+```
+beta
+```
+
+Exemplo:
+
+```yaml
+on:
+  pull_request:
+    types:
+      - labeled
+```
+
+Validar:
+
+```
+github.event.label.name == 'beta'
+```
+
+Caso verdadeiro
+
+executar
+
+```
+semantic-release
+```
+
+utilizando o canal
+
+```
+beta
+```
+
+---
+
+# Exemplo de Workflow - Release Final
+
+Executar quando
+
+```
+Pull Request
+
+↓
+
+Merged
+
+↓
+
+main
+```
+
+Exemplo
+
+```yaml
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+```
+
+Validar
+
+```
+merged == true
+```
+
+Executar
+
+```
+semantic-release
+```
+
+Gerando
+
+```
+1.2.0
+```
+
+---
+
+# Exemplo de Workflow - Create Release
+
+Workflow manual.
+
+```yaml
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "Tipo da Release"
+        required: true
+        type: choice
+        options:
+          - minor
+          - major
+```
+
+O Workflow deverá
+
+- descobrir última TAG
+- calcular próxima versão
+- criar branch release/x.y
+- abrir automaticamente um Pull Request para main
+
+---
+
+# Exemplo de Workflow - Create Hotfix
+
+Workflow manual
+
+```yaml
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versão Base"
+        required: true
+```
+
+Exemplo
+
+```
+1.2.0
+```
+
+O Workflow deverá
+
+- localizar TAG
+- criar
+
+```
+hotfix/1.2.1
+```
+
+a partir desta TAG
+
+---
+
+# Exemplo de .releaserc
+
+A implementação deverá gerar automaticamente um arquivo semelhante ao abaixo (adaptado ao fluxo proposto):
+
+```json
+{
+  "branches": [
+    "main",
+    {
+      "name": "release/*",
+      "prerelease": "alpha"
+    },
+    {
+      "name": "beta",
+      "prerelease": "beta"
+    }
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/changelog",
+    "@semantic-release/github",
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "CHANGELOG.md"
+        ],
+        "message": "chore(release): ${nextRelease.version} [skip ci]"
+      }
+    ]
+  ]
+}
+```
+
+A IA pode ajustar esta configuração conforme necessário para suportar o fluxo Alpha → Beta → Release.
+
+---
+
+# Conventional Commits
+
+Os exemplos abaixo deverão ser considerados durante os testes.
+
+```
+feat(terraform): adiciona módulo VPC
+
+feat(ansible): adiciona workflow AVD
+
+fix(terraform): corrige provider
+
+fix(ansible): corrige timeout
+
+perf(terraform): melhora performance
+
+refactor: reorganiza código
+
+docs: atualiza README
+
+test: adiciona testes
+
+chore: atualiza dependências
+
+ci: ajusta workflow
+```
+
+---
+
+# Resultado esperado
+
+A solução deve ser completamente automatizada.
+
+O desenvolvedor deverá apenas:
+
+1. Criar Feature
+2. Abrir Pull Request
+3. Mergear na Release
+4. Aplicar Label Beta quando desejar iniciar homologação
+5. Aprovar e Mergear o Pull Request da Release
+6. Executar Hotfix quando necessário
+
+Todo o restante (branches, tags, changelog, releases, versionamento e promoção) deve ocorrer automaticamente através dos GitHub Actions e do Semantic Release.
